@@ -1,4 +1,4 @@
-IA MCTS_UST pour un puissance 4
+IA MCTS_UCT pour un puissance 4
 
 compilation:
 
