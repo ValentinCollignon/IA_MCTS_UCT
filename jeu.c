@@ -19,6 +19,7 @@
 #define AUTRE_JOUEUR(i) (1-(i))
 #define min(a, b)       ((a) < (b) ? (a) : (b))
 #define max(a, b)       ((a) < (b) ? (b) : (a))
+#define c sqrt(2)
 
 // Critères de fin de partie
 typedef enum {NON, MATCHNUL, ORDI_GAGNE, HUMAIN_GAGNE } FinDePartie;
@@ -28,20 +29,15 @@ typedef struct EtatSt {
 
 	int joueur; // à qui de jouer ? 
 
-	// TODO: à compléter par la définition de l'état du jeu
 	char plateau[6][7];
-	/* par exemple, pour morpion: */
-	//char plateau[3][3];	
+
 
 } Etat;
 
 // Definition du type Coup
 typedef struct {
-	// TODO: à compléter par la définition d'un coup 
 	int colonne;
-	/* par exemple, pour morpion: 
-	int ligne;
-	int colonne;*/
+
 
 } Coup;
 
@@ -51,10 +47,6 @@ Etat * copieEtat( Etat * src ) {
 
 	etat->joueur = src->joueur;
 	
-		
-	// TODO: à compléter avec la copie de l'état src dans etat
-	
-	/* par exemple : */
 	int i,j;	
 	for (i=0; i< 6; i++)
 		for ( j=0; j<7; j++)
@@ -69,9 +61,6 @@ Etat * copieEtat( Etat * src ) {
 Etat * etat_initial( void ) {
 	Etat * etat = (Etat *)malloc(sizeof(Etat));
 	
-	// TODO: à compléter avec la création de l'état initial
-	
-	/* par exemple : */
 	int i,j;	
 	for (i=0; i< 6; i++)
 		for ( j=0; j<7; j++)
@@ -83,15 +72,12 @@ Etat * etat_initial( void ) {
 
 void afficheJeu(Etat * etat) {
 
-	// TODO: à compléter
-
-	/* par exemple : */
 	int i,j;
 	printf("   |");
 	for ( j = 0; j < 7; j++)   //affichage des numéros de colonne
 		printf(" %d |", j);
 	printf("\n");
-	printf("----------------");
+	printf("--------------------------------");
 	printf("\n");
 	
 	for(i=0; i < 6; i++) {
@@ -99,20 +85,16 @@ void afficheJeu(Etat * etat) {
 		for ( j = 0; j < 7; j++) 
 			printf(" %c |", etat->plateau[5-i][j]);
 		printf("\n");
-		printf("----------------");
+		printf("--------------------------------");
 		printf("\n");
 	}
 }
 
 
 // Nouveau coup 
-// TODO: adapter la liste de paramètres au jeu
 Coup * nouveauCoup( int i ) {
 	Coup * coup = (Coup *)malloc(sizeof(Coup));
-	
-	// TODO: à compléter avec la création d'un nouveau coup
-	
-	/* par exemple : */
+
 	coup->colonne = i;
 	
 	return coup;
@@ -134,9 +116,6 @@ int caseLibre(int i,Etat * etat){
 // Demander à l'humain quel coup jouer 
 Coup * demanderCoup () {
 
-	// TODO...
-
-	/* par exemple : */
 	int i;
 	printf("\n quelle colonne ? ") ;
 	scanf("%d",&i); 
@@ -148,9 +127,6 @@ Coup * demanderCoup () {
 // retourne 0 si le coup n'est pas possible
 int jouerCoup( Etat * etat, Coup * coup ) {
 
-	// TODO: à compléter
-	
-	/* par exemple : */
 	if ( etat->plateau[5][coup->colonne] != ' ' )
 		return 0;
 	else {
@@ -171,18 +147,14 @@ Coup ** coups_possibles( Etat * etat ) {
 	Coup ** coups = (Coup **) malloc((1+LARGEUR_MAX) * sizeof(Coup *) );
 	
 	int k = 0;
-	
-	// TODO: à compléter
-	
-	/* par exemple */
-	int i,j;
+
+	int i;
 	for(i=0; i < 7; i++) {
 		if ( etat->plateau[5][i] == ' ' ) {
 			coups[k] = nouveauCoup(i); 
 			k++;
 		}
 	}
-	/* fin de l'exemple */
 	
 	coups[k] = NULL;
 
@@ -203,8 +175,8 @@ typedef struct NoeudSt {
 	int nb_enfants;	// nb d'enfants présents dans la liste
 	
 	// POUR MCTS:
-	int nb_victoires;
-	int nb_simus;
+	int nb_victoires; //w
+	int nb_simus; //n
 	
 } Noeud;
 
@@ -263,10 +235,6 @@ void freeNoeud ( Noeud * noeud) {
 // Test si l'état est un état terminal 
 // et retourne NON, MATCHNUL, ORDI_GAGNE ou HUMAIN_GAGNE
 FinDePartie testFin( Etat * etat ) {
-
-	// TODO...
-	
-	/* par exemple	*/
 	
 	// tester si un joueur a gagné
 	int i,j,k,n = 0;
@@ -318,57 +286,142 @@ FinDePartie testFin( Etat * etat ) {
 // en tempsmax secondes
 void ordijoue_mcts(Etat * etat, int tempsmax) {
 
+	Coup ** coups;
+	Coup ** choix;
+	Coup * meilleur_coup ;
+	
+	FinDePartie tmp;
+	
+	//coups jouable
 	clock_t tic, toc;
 	tic = clock();
 	int temps;
+	int i,m,k;
 
-	Coup ** coups;
-	Coup * meilleur_coup ;
+	choix = coups_possibles(etat);
 	
 	// Créer l'arbre de recherche
-	Noeud * racine = nouveauNoeud(NULL, NULL);	
+	Noeud * racine = nouveauNoeud(NULL, NULL);
+	Noeud * enfant;	
 	racine->etat = copieEtat(etat); 
 	
-	// créer les premiers noeuds:
-	coups = coups_possibles(racine->etat); 
-	int k = 0;
-	Noeud * enfant;
-	while ( coups[k] != NULL) {
-		enfant = ajouterEnfant(racine, coups[k]);
-		k++;
+	int iter = 0;
+	int indiceEnfant;
+	double bValue,bValue2;
+	Noeud * select;
+	int numJoueur;
+	int indice[7];
+	int p = 0;
+
+	for(i = 0;i < 7;i++){
+	  indice[i] = -1;
 	}
 	
-	
-	meilleur_coup = coups[ rand()%k ]; // choix aléatoire
-	
-	/*  TODO :
-		- supprimer la sélection aléatoire du meilleur coup ci-dessus
-		- implémenter l'algorithme MCTS-UCT pour déterminer le meilleur coup ci-dessous
-
-	int iter = 0;
-	
 	do {
-	
-	
-	
-		// à compléter par l'algorithme MCTS-UCT... 
-	
-	
-	
-	
-		toc = clock(); 
-		temps = (int)( ((double) (toc - tic)) / CLOCKS_PER_SEC );
-		iter ++;
+	    select = racine;
+	    numJoueur = etat->joueur;
+	    
+	    while(testFin(select->etat) == NON)//tans qu'on est pas a la fin du jeux
+	    {
+
+	      //expansion si pas d'enfant
+	      if(select->nb_enfants == 0){
+		  coups = coups_possibles(select->etat);
+		  k = 0;
+		  while(coups[k] != NULL){
+		    enfant = ajouterEnfant(select,coups[k]);
+		    k++;
+		  }
+	      }
+	      
+	      // on explore les enfants non exploré si il y en as
+	      if(select->nb_enfants > select->nb_simus){
+		for(i = 0;i < select->nb_enfants;i++){
+		  if(select->enfants[i]->nb_simus == 0){
+		    indice[p] = i;
+		    p++;
+		  }
+		}
+
+		select = select->enfants[ indice[rand()%p] ]; // choix aléatoire
+		//reinitialisation p
+		p = 0;	
+	      }
+	      else{
+		//sinon : selection de la meilleur b-value
+		indiceEnfant = 0;
+		//calcul bValue
+		if(etat->joueur != numJoueur)
+		  bValue = (select->enfants[indiceEnfant]->nb_victoires/(double)select->enfants[indiceEnfant]->nb_simus) + (c* sqrt(log(select->enfants[indiceEnfant]->parent->nb_simus)/(double)select->enfants[indiceEnfant]->nb_simus));
+		else
+		  bValue = -(select->enfants[indiceEnfant]->nb_victoires/(double)select->enfants[indiceEnfant]->nb_simus) + (c* sqrt(log(select->enfants[indiceEnfant]->parent->nb_simus)/(double)select->enfants[indiceEnfant]->nb_simus));
+		  
+		
+		for(m =1; m < select->nb_enfants;m++){
+		  //calcul bValue
+		  if(etat->joueur != numJoueur)
+		    bValue2 = (select->enfants[m]->nb_victoires/(double)select->enfants[m]->nb_simus) + (c* sqrt(log(select->enfants[m]->parent->nb_simus)/(double)select->enfants[m]->nb_simus));
+		  else 
+		    bValue2 = -(select->enfants[m]->nb_victoires/(double)select->enfants[m]->nb_simus) + (c* sqrt(log(select->enfants[m]->parent->nb_simus)/(double)select->enfants[m]->nb_simus));
+
+		  //maj
+		  if(bValue < bValue2){
+		    bValue = bValue2;
+		    indiceEnfant = m;
+		  }
+		  
+		}
+		select = select->enfants[indiceEnfant];
+	      }
+	      
+	      //maj du joueur courant
+	      select->joueur = numJoueur;
+	      numJoueur = AUTRE_JOUEUR(numJoueur);
+	      
+	    } 
+	    
+	    //backpropagation
+	    tmp = testFin(select->etat);
+	    while(select->parent != NULL){
+	      select->nb_simus += 1;
+	      if( tmp == ORDI_GAGNE ){
+		select->nb_victoires += 1;
+	      }
+	      /*if( tmp == HUMAIN_GAGNE ){
+		select->nb_victoires -= 1;
+	      }*/
+	      select = select->parent;
+	    }
+	    racine->nb_simus++;
+	    if(tmp == ORDI_GAGNE){
+	      racine->nb_victoires++;
+	    }
+	    /*if( tmp == HUMAIN_GAGNE ){
+		racine->nb_victoires -= 1;
+	     }*/
+	    
+	    toc = clock(); 
+	    temps = (int)( ((double) (toc - tic)) / CLOCKS_PER_SEC );
+	    iter ++;
 	} while ( temps < tempsmax );
-	
+
 	/* fin de l'algorithme  */ 
 	
-	// Jouer le meilleur premier coup
+	// Jouer le meilleur coup
+	double best = 0;
+	for(i = 0;i < racine->nb_enfants;i++){
+	  if(racine->enfants[i]->nb_simus != 0)
+	    if(best < racine->enfants[i]->nb_victoires/(double)racine->enfants[i]->nb_simus){
+	      best = racine->enfants[i]->nb_victoires/(double)racine->enfants[i]->nb_simus;
+	      meilleur_coup = choix[i];
+	    }
+	}
+		
 	jouerCoup(etat, meilleur_coup );
-	
 	// Penser à libérer la mémoire :
 	freeNoeud(racine);
 	free (coups);
+	free (choix);
 }
 
 int main(void) {
