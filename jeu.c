@@ -312,6 +312,7 @@ void ordijoue_mcts(Etat * etat, int tempsmax) {
 	int numJoueur;
 	int indice[7];
 	int p = 0;
+	int coupGagnant=0;
 
 	for(i = 0;i < 7;i++){
 	  indice[i] = -1;
@@ -333,52 +334,69 @@ void ordijoue_mcts(Etat * etat, int tempsmax) {
 		    k++;
 		  }
 	      }
-	      
+
+
+		//Question 3
+		coupGagnant=0;
+		if(etat->joueur != numJoueur){
+			i=0;
+			while(i<select->nb_enfants && coupGagnant ==0){
+				if(testFin(select->enfants[i]->etat) == ORDI_GAGNE){
+					select = select->enfants[i];
+					coupGagnant = 1;
+				}
+				i++;
+			}
+		}
+					
+	      if(coupGagnant ==0){
 	      // on explore les enfants non exploré si il y en as
-	      if(select->nb_enfants > select->nb_simus){
-		for(i = 0;i < select->nb_enfants;i++){
-		  if(select->enfants[i]->nb_simus == 0){
-		    indice[p] = i;
-		    p++;
-		  }
-		}
+		      if(select->nb_enfants > select->nb_simus){
+			for(i = 0;i < select->nb_enfants;i++){
+			  if(select->enfants[i]->nb_simus == 0){
+			    indice[p] = i;
+			    p++;
+			  }
+			}
 
-		select = select->enfants[ indice[rand()%p] ]; // choix aléatoire
-		//reinitialisation p
-		p = 0;	
-	      }
-	      else{
-		//sinon : selection de la meilleur b-value
-		indiceEnfant = 0;
-		//calcul bValue
-		if(etat->joueur != numJoueur)
-		  bValue = (select->enfants[indiceEnfant]->nb_victoires/(double)select->enfants[indiceEnfant]->nb_simus) + (c* sqrt(log(select->enfants[indiceEnfant]->parent->nb_simus)/(double)select->enfants[indiceEnfant]->nb_simus));
-		else
-		  bValue = -(select->enfants[indiceEnfant]->nb_victoires/(double)select->enfants[indiceEnfant]->nb_simus) + (c* sqrt(log(select->enfants[indiceEnfant]->parent->nb_simus)/(double)select->enfants[indiceEnfant]->nb_simus));
-		  
+			select = select->enfants[ indice[rand()%p] ]; // choix aléatoire
+			//reinitialisation p
+			p = 0;	
+		      }
+		      else{
+			//sinon : selection de la meilleur b-value
+			indiceEnfant = 0;
+			//calcul bValue
+			if(etat->joueur != numJoueur)
+			  bValue = (select->enfants[indiceEnfant]->nb_victoires/(double)select->enfants[indiceEnfant]->nb_simus) + (c* sqrt(log(select->enfants[indiceEnfant]->parent->nb_simus)/(double)select->enfants[indiceEnfant]->nb_simus));
+			else
+			  bValue = -(select->enfants[indiceEnfant]->nb_victoires/(double)select->enfants[indiceEnfant]->nb_simus) + (c* sqrt(log(select->enfants[indiceEnfant]->parent->nb_simus)/(double)select->enfants[indiceEnfant]->nb_simus));
+			  
 		
-		for(m =1; m < select->nb_enfants;m++){
-		  //calcul bValue
-		  if(etat->joueur != numJoueur)
-		    bValue2 = (select->enfants[m]->nb_victoires/(double)select->enfants[m]->nb_simus) + (c* sqrt(log(select->enfants[m]->parent->nb_simus)/(double)select->enfants[m]->nb_simus));
-		  else 
-		    bValue2 = -(select->enfants[m]->nb_victoires/(double)select->enfants[m]->nb_simus) + (c* sqrt(log(select->enfants[m]->parent->nb_simus)/(double)select->enfants[m]->nb_simus));
+			for(m =1; m < select->nb_enfants;m++){
+			  //calcul bValue
+			  if(etat->joueur != numJoueur)
+			    bValue2 = (select->enfants[m]->nb_victoires/(double)select->enfants[m]->nb_simus) + (c* sqrt(log(select->enfants[m]->parent->nb_simus)/(double)select->enfants[m]->nb_simus));
+			  else 
+			    bValue2 = -(select->enfants[m]->nb_victoires/(double)select->enfants[m]->nb_simus) + (c* sqrt(log(select->enfants[m]->parent->nb_simus)/(double)select->enfants[m]->nb_simus));
 
-		  //maj
-		  if(bValue < bValue2){
-		    bValue = bValue2;
-		    indiceEnfant = m;
-		  }
-		  
+			  //maj
+			  if(bValue < bValue2){
+			    bValue = bValue2;
+			    indiceEnfant = m;
+			  }
+			  
+			}
+			select = select->enfants[indiceEnfant];
+		      }
 		}
-		select = select->enfants[indiceEnfant];
-	      }
-	      
-	      //maj du joueur courant
-	      select->joueur = numJoueur;
-	      numJoueur = AUTRE_JOUEUR(numJoueur);
-	      
-	    } 
+		      	
+		//maj du joueur courant
+		select->joueur = numJoueur;
+		numJoueur = AUTRE_JOUEUR(numJoueur);
+		      
+		} 
+		
 	    
 	    //backpropagation
 	    tmp = testFin(select->etat);
