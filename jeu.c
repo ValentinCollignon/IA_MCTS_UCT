@@ -13,7 +13,7 @@
 // Paramètres du jeu
 #define LARGEUR_MAX 7 		// nb max de fils pour un noeud (= nb max de coups possibles)
 
-#define TEMPS 5		// temps de calcul pour un coup avec MCTS (en secondes)
+#define TEMPS 1		// temps de calcul pour un coup avec MCTS (en secondes)
 
 // macros
 #define AUTRE_JOUEUR(i) (1-(i))
@@ -392,8 +392,9 @@ void ordijoue_mcts(Etat * etat, int tempsmax) {
 		}
 		      	
 		//maj du joueur courant
-		select->joueur = numJoueur;
 		numJoueur = AUTRE_JOUEUR(numJoueur);
+		select->joueur = numJoueur;
+
 		      
 		} 
 		
@@ -423,6 +424,7 @@ void ordijoue_mcts(Etat * etat, int tempsmax) {
 	    iter ++;
 	} while ( temps < tempsmax );
 
+	
 	/* fin de l'algorithme  */ 
 	
 	// Jouer le meilleur coup
@@ -435,6 +437,9 @@ void ordijoue_mcts(Etat * etat, int tempsmax) {
 	    }
 	}
 		
+	/* affichage nombre iteration et probabilité victorie : nombre victoire/simulation */
+    printf("Nombre d'iteration : %d \n",iter);
+    printf("Chance de victoire : %f \n",best);
 	jouerCoup(etat, meilleur_coup );
 	// Penser à libérer la mémoire :
 	freeNoeud(racine);
